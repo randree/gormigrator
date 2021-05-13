@@ -10,7 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-const Version = "0.0.1-alpha"
+const Version = "0.1.1-alpha"
+
+var Testing bool = true
 
 //Inspired by https://github.com/pressly/goose/blob/master/examples/go-migrations/00002_rename_root.go
 

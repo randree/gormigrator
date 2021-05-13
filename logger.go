@@ -2,8 +2,6 @@ package gormigrator
 
 import "log"
 
-var Testing bool = false
-
 // In case of errorLog we don't want to inject a logger to the migrator
 // The reason is to keep it as small as possible later in main
 func errorLog(message string) {

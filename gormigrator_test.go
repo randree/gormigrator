@@ -1,6 +1,7 @@
 package gormigrator
 
 import (
+	"errors"
 	"log"
 	"os"
 	"testing"
@@ -12,7 +13,73 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// These file mocks can't be tested in real files because all calls are nested in the init part
+// there are scenarios where they interfere with actual migration files
+
+func MigrationFile0001Mock() {
+
+	migrationFileList["mig0001.go"] = &updown{
+		level: "mig0001.go",
+		code:  "user_table_start",
+		up: func(db *gorm.DB) error {
+			type migtest struct {
+				gorm.Model
+				Name  string `gorm:"size:255"`
+				Email string `gorm:"size:300"`
+			}
+			err := db.AutoMigrate(&migtest{})
+			return err
+		},
+		down: func(db *gorm.DB) error {
+			err := db.Migrator().DropTable("migtests")
+			return err
+		},
+	}
+}
+
+func MigrationFile0002Mock() {
+
+	migrationFileList["mig0002.go"] = &updown{
+		level: "mig0002.go",
+		code:  "user_table_add_column",
+		up: func(db *gorm.DB) error {
+			type migtest struct {
+				// only new column in struct
+				Testcol string
+			}
+			err := db.Migrator().AddColumn(&migtest{}, "testcol")
+			return err
+		},
+		down: func(db *gorm.DB) error {
+			type migtest struct {
+				Testcol string
+			}
+			err := db.Migrator().DropColumn(&migtest{}, "testcol")
+			return err
+		},
+	}
+}
+
+func MigrationFile0003Mock() {
+
+	migrationFileList["mig00011.go"] = &updown{
+		level: "mig0011.go",
+		code:  "user_table_through_error",
+		up: func(db *gorm.DB) error {
+			err := errors.New("fake error")
+			return err
+		},
+		down: func(db *gorm.DB) error {
+			return nil
+		},
+	}
+}
+
 func TestStartMigration(t *testing.T) {
+
+	MigrationFile0001Mock()
+	MigrationFile0002Mock()
+	MigrationFile0003Mock()
 
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer

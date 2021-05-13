@@ -106,9 +106,9 @@ func getIndices(from, to string, ordered *migrationOrderedType) (int, int, error
 
 func doExecution(from, to, user string, store Store, ordered *migrationOrderedType, db *gorm.DB) error {
 
-	// Need to check if "from" is identical with current code from database
+	// Need to check if "from" is identical with current code from database, and it shouldn't be null
 	_, code, err := store.GetCurrentLevel()
-	if from == "null" && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if from == "null" && !errors.Is(err, gorm.ErrRecordNotFound) && code != "null" {
 		return errors.New("there is a current state available")
 	}
 

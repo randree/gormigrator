@@ -130,6 +130,16 @@ func TestStartMigration(t *testing.T) {
 			hasPanic:  false,
 		},
 		{
+			TestLabel: "Do first migration again",
+			Args:      []string{"cmd", "-from", "null", "-to", "user_table_start", "-user", "Dan2"},
+			hasPanic:  false,
+		},
+		{
+			TestLabel: "Final downgrade to null again",
+			Args:      []string{"cmd", "-from", "user_table_start", "-to", "null", "-user", "The Downgrader2"},
+			hasPanic:  false,
+		},
+		{
 			TestLabel: "Show list of all migrations",
 			Args:      []string{"cmd", "-list"},
 			hasPanic:  false,

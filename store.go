@@ -32,7 +32,7 @@ func (m *MigrationStore) GetCurrentLevel() (string, string, error) {
 
 func (m *MigrationStore) FetchAll() ([]*Migration, error) {
 	migrationList := make([]*Migration, 0)
-	if err := m.db.Table("migrations").Order("id ASC").Find(&migrationList).Error; err != nil {
+	if err := m.db.Table("migrations").Order("id DESC").Find(&migrationList).Error; err != nil {
 		return nil, err
 	}
 	return migrationList, nil

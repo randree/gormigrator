@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -13,36 +14,61 @@ import (
 
 type Store interface {
 	GetCurrentLevel() (string, string, error)
-	SaveState(code, level string) error
+	SaveState(code, level, user string) error
+	FetchAll() ([]*Migration, error)
 }
 
 func InitMigration(db *gorm.DB) {
 	//Get store
 	store := NewMigrationStore(db)
-	from, to := cmd()
-	StartMigration(from, to, store, db)
-}
+	from, to, user, list := cmd()
 
-func cmd() (*string, *string) {
-	cmd := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	// migAction := cmd.String("mig", "status", "Migration mode up|down|status")
-	migFrom := cmd.String("from", "", "Current code")
-	migTo := cmd.String("to", "", "Code to migrate to")
-	cmd.Parse(os.Args[1:])
+	if *list {
+		showHistory(store)
+		return
+	}
 
-	// if *migAction == "" {
-	// 	panic("no migration flag found")
-	// }
-	if *migFrom == "" {
+	if *from == "" {
 		panic("no from-flag found")
 	}
-	if *migTo == "" {
+	if *to == "" {
 		panic("no to-flag found")
 	}
-	return migFrom, migTo
+
+	StartMigration(from, to, user, store, db)
 }
 
-func StartMigration(from, to *string, store Store, db *gorm.DB) {
+func cmd() (*string, *string, *string, *bool) {
+	cmd := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	// migAction := cmd.String("mig", "status", "Migration mode up|down|status")
+	from := cmd.String("from", "", "Current code")
+	to := cmd.String("to", "", "Code to migrate to")
+	user := cmd.String("user", "", "User who does migration")
+
+	list := cmd.Bool("list", false, "List history of migration")
+	cmd.Parse(os.Args[1:])
+
+	return from, to, user, list
+}
+
+func showHistory(store Store) {
+
+	list, _ := store.FetchAll()
+	if len(list) == 0 {
+		panic("there is no migration done yet")
+	}
+	fmt.Printf("\n| %-40s | %-40s | %-20s |\n", "DATETIME HISTORY", "LEVEL (State)", "USER")
+	fmt.Printf("| %-40s | %-40s | %-20s |\n", strings.Repeat("-", 40), strings.Repeat("-", 40), strings.Repeat("-", 20))
+	for i, entry := range list {
+		if i == 0 {
+			fmt.Printf("| \033[;33m%-40s\033[0m | \033[;33m%-30s (current)\033[0m | \033[;33m%-20s\033[0m |\n", entry.CreatedAt, entry.Level, entry.User)
+		} else {
+			fmt.Printf("| %-40s | %-30s           | %-20s |\n", entry.CreatedAt, entry.Level, entry.User)
+		}
+	}
+}
+
+func StartMigration(from, to, user *string, store Store, db *gorm.DB) {
 
 	consistencyFileCheck(&migrationFileList)
 
@@ -54,7 +80,7 @@ func StartMigration(from, to *string, store Store, db *gorm.DB) {
 		panic("no migration file found")
 	}
 
-	err := doExecute(*from, *to, store, &ordered, db)
+	err := doExecution(*from, *to, *user, store, &ordered, db)
 
 	if err != nil {
 		panic(err.Error())
@@ -76,7 +102,7 @@ func getIndices(from, to string, ordered *migrationOrderedType) (int, int, error
 
 }
 
-func doExecute(from, to string, store Store, ordered *migrationOrderedType, db *gorm.DB) error {
+func doExecution(from, to, user string, store Store, ordered *migrationOrderedType, db *gorm.DB) error {
 
 	// Need to check if "from" is identical with current code from database
 	_, code, err := store.GetCurrentLevel()
@@ -101,6 +127,6 @@ func doExecute(from, to string, store Store, ordered *migrationOrderedType, db *
 		return err
 	}
 
-	err = ordered.execute(start, end, db, store)
+	err = ordered.execute(start, end, user, db, store)
 	return err
 }

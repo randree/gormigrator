@@ -4,13 +4,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration model
-type Migration struct {
-	gorm.Model
-	Code  string `gorm:"size:455"`
-	Level string `gorm:"size:255"`
-}
-
 type MigrationStore struct {
 	db *gorm.DB
 }
@@ -37,16 +30,19 @@ func (m *MigrationStore) GetCurrentLevel() (string, string, error) {
 	return last.Level, last.Code, nil
 }
 
-// func (m *MigrationStore) CountLevels() error {
-// 	if err := m.db.Create(&currentState).Error; err != nil {
-// 		return err
-// 	}
-// }
+func (m *MigrationStore) FetchAll() ([]*Migration, error) {
+	migrationList := make([]*Migration, 0)
+	if err := m.db.Table("migrations").Order("id ASC").Find(&migrationList).Error; err != nil {
+		return nil, err
+	}
+	return migrationList, nil
+}
 
-func (m *MigrationStore) SaveState(code, level string) error {
+func (m *MigrationStore) SaveState(code, level, user string) error {
 	currentState := &Migration{
 		Code:  code,
 		Level: level,
+		User:  user,
 	}
 	if err := m.db.Create(&currentState).Error; err != nil {
 		return err

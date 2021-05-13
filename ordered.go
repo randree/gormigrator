@@ -46,7 +46,7 @@ func (mig *migrationOrderedType) getIndex(code string) (int, error) {
 	return 0, errors.New("couldn't find code")
 }
 
-func (mig *migrationOrderedType) execute(startIndex int, endIndex int, db *gorm.DB, store Store) error {
+func (mig *migrationOrderedType) execute(startIndex int, endIndex int, user string, db *gorm.DB, store Store) error {
 	// Upgrade
 	if startIndex < endIndex {
 		for i := startIndex; i < endIndex; i++ {
@@ -54,7 +54,7 @@ func (mig *migrationOrderedType) execute(startIndex int, endIndex int, db *gorm.
 			// execute upgrade
 			err := (*mig)[i+1].up(db)
 			if err == nil {
-				if errStore := store.SaveState(mig.getCodeOnIndex(i+1), mig.getLevelOnIndex(i+1)); errStore != nil {
+				if errStore := store.SaveState(mig.getCodeOnIndex(i+1), mig.getLevelOnIndex(i+1), user); errStore != nil {
 					return errStore
 				}
 			} else {
@@ -76,7 +76,7 @@ func (mig *migrationOrderedType) execute(startIndex int, endIndex int, db *gorm.
 			fmt.Println("\033[;36m⬇ DOWNGRADE ("+mig.getLevelOnIndex(i)+") ⟶ ("+mig.getLevelOnIndex(i-1)+") ", mig.getCodeOnIndex(i), "⟶", mig.getCodeOnIndex(i-1), "\033[0m")
 			err := (*mig)[i].down(db)
 			if err == nil {
-				if errStore := store.SaveState(mig.getCodeOnIndex(i-1), mig.getLevelOnIndex(i-1)); errStore != nil {
+				if errStore := store.SaveState(mig.getCodeOnIndex(i-1), mig.getLevelOnIndex(i-1), user); errStore != nil {
 					return errStore
 				}
 			} else {

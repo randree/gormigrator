@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const Version = "0.1.1-alpha"
+const Version = "0.1.2-alpha"
 
 var Testing bool = false
 

@@ -12,7 +12,7 @@ import (
 
 const Version = "0.1.1-alpha"
 
-var Testing bool = true
+var Testing bool = false
 
 //Inspired by https://github.com/pressly/goose/blob/master/examples/go-migrations/00002_rename_root.go
 

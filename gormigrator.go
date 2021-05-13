@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const Version = "0.0.1-alpha"
+
 //Inspired by https://github.com/pressly/goose/blob/master/examples/go-migrations/00002_rename_root.go
 
 type Store interface {
@@ -21,7 +23,12 @@ type Store interface {
 func InitMigration(db *gorm.DB) {
 	//Get store
 	store := NewMigrationStore(db)
-	from, to, user, list := cmd()
+	from, to, user, list, version := cmd()
+
+	if *version {
+		fmt.Println("Version: ", Version)
+		return
+	}
 
 	if *list {
 		err := showHistory(store)
@@ -44,7 +51,7 @@ func InitMigration(db *gorm.DB) {
 	}
 }
 
-func cmd() (*string, *string, *string, *bool) {
+func cmd() (*string, *string, *string, *bool, *bool) {
 	cmd := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	// migAction := cmd.String("mig", "status", "Migration mode up|down|status")
 	from := cmd.String("from", "", "Current code")
@@ -52,9 +59,10 @@ func cmd() (*string, *string, *string, *bool) {
 	user := cmd.String("user", "", "User who does migration")
 
 	list := cmd.Bool("list", false, "List history of migration")
+	version := cmd.Bool("version", false, "Show version")
 	cmd.Parse(os.Args[1:])
 
-	return from, to, user, list
+	return from, to, user, list, version
 }
 
 func showHistory(store Store) error {

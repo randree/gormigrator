@@ -144,6 +144,11 @@ func TestStartMigration(t *testing.T) {
 			Args:      []string{"cmd", "-list"},
 			hasPanic:  false,
 		},
+		{
+			TestLabel: "Show version",
+			Args:      []string{"cmd", "-version"},
+			hasPanic:  false,
+		},
 	} {
 		t.Run(test.TestLabel, func(t *testing.T) {
 			os.Args = test.Args

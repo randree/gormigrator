@@ -24,18 +24,24 @@ func InitMigration(db *gorm.DB) {
 	from, to, user, list := cmd()
 
 	if *list {
-		showHistory(store)
+		err := showHistory(store)
+		if err != nil {
+			errorLog(err.Error())
+		}
 		return
 	}
 
 	if *from == "" {
-		panic("no from-flag found")
+		errorLog("no from-flag found")
 	}
 	if *to == "" {
-		panic("no to-flag found")
+		errorLog("no to-flag found")
 	}
 
-	StartMigration(from, to, user, store, db)
+	err := StartMigration(from, to, user, store, db)
+	if err != nil {
+		errorLog(err.Error())
+	}
 }
 
 func cmd() (*string, *string, *string, *bool) {
@@ -51,11 +57,11 @@ func cmd() (*string, *string, *string, *bool) {
 	return from, to, user, list
 }
 
-func showHistory(store Store) {
+func showHistory(store Store) error {
 
 	list, _ := store.FetchAll()
 	if len(list) == 0 {
-		panic("there is no migration done yet")
+		return errors.New("there is no migration done yet")
 	}
 	fmt.Printf("\n| %-40s | %-40s | %-20s |\n", "DATETIME HISTORY", "LEVEL (State)", "USER")
 	fmt.Printf("| %-40s | %-40s | %-20s |\n", strings.Repeat("-", 40), strings.Repeat("-", 40), strings.Repeat("-", 20))
@@ -66,9 +72,10 @@ func showHistory(store Store) {
 			fmt.Printf("| %-40s | %-30s           | %-20s |\n", entry.CreatedAt, entry.Level, entry.User)
 		}
 	}
+	return nil
 }
 
-func StartMigration(from, to, user *string, store Store, db *gorm.DB) {
+func StartMigration(from, to, user *string, store Store, db *gorm.DB) error {
 
 	consistencyFileCheck(&migrationFileList)
 
@@ -77,26 +84,21 @@ func StartMigration(from, to, user *string, store Store, db *gorm.DB) {
 	ordered.importMigrationFileList(migrationFileList)
 
 	if len(ordered) == 0 {
-		panic("no migration file found")
+		return errors.New("no migration file found")
 	}
 
-	err := doExecution(*from, *to, *user, store, &ordered, db)
-
-	if err != nil {
-		panic(err.Error())
-
-	}
+	return doExecution(*from, *to, *user, store, &ordered, db)
 
 }
 
 func getIndices(from, to string, ordered *migrationOrderedType) (int, int, error) {
 	startIndex, err := ordered.getIndex(from)
 	if err != nil {
-		return 0, 0, fmt.Errorf("StartIndex: %w", err)
+		return 0, 0, fmt.Errorf("From-code: %w", err)
 	}
-	endIndex, _ := ordered.getIndex(to)
+	endIndex, err := ordered.getIndex(to)
 	if err != nil {
-		return 0, 0, fmt.Errorf("EndIndex: %w", err)
+		return 0, 0, fmt.Errorf("To-code: %w", err)
 	}
 	return startIndex, endIndex, nil
 

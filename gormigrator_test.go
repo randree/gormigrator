@@ -30,6 +30,9 @@ func TestStartMigration(t *testing.T) {
 	db.Migrator().DropTable("migrations")
 	db.Migrator().DropTable("migtest")
 
+	//activate testing
+	Testing = true
+
 	t.Run("DB ok", func(t *testing.T) {
 		assert.NoError(t, err)
 	})
@@ -63,6 +66,12 @@ func TestStartMigration(t *testing.T) {
 			Args:         []string{"cmd", "-to", "user_table_start"},
 			hasPanic:     true,
 			errorMessage: "no from-flag found",
+		},
+		{
+			TestLabel:    "Do first wrong migration",
+			Args:         []string{"cmd", "-from", "null", "-to", "doNotExist", "-user", "John"},
+			hasPanic:     true,
+			errorMessage: "To-code: couldn't find code",
 		},
 		{
 			TestLabel: "Do first migration",
@@ -136,6 +145,6 @@ func TestStartMigration(t *testing.T) {
 		})
 	}
 
-	// db.Migrator().DropTable("migrations")
+	db.Migrator().DropTable("migrations")
 	// Instead of dropping table you can investigate migrations
 }

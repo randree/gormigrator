@@ -71,7 +71,7 @@ func TestStartMigration(t *testing.T) {
 			TestLabel:    "Do first wrong migration",
 			Args:         []string{"cmd", "-from", "null", "-to", "doNotExist", "-user", "John"},
 			hasPanic:     true,
-			errorMessage: "To-code: couldn't find code",
+			errorMessage: "to-code: couldn't find code",
 		},
 		{
 			TestLabel: "Do first migration",

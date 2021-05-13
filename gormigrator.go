@@ -94,11 +94,11 @@ func StartMigration(from, to, user *string, store Store, db *gorm.DB) error {
 func getIndices(from, to string, ordered *migrationOrderedType) (int, int, error) {
 	startIndex, err := ordered.getIndex(from)
 	if err != nil {
-		return 0, 0, fmt.Errorf("From-code: %w", err)
+		return 0, 0, fmt.Errorf("from-code: %w", err)
 	}
 	endIndex, err := ordered.getIndex(to)
 	if err != nil {
-		return 0, 0, fmt.Errorf("To-code: %w", err)
+		return 0, 0, fmt.Errorf("to-code: %w", err)
 	}
 	return startIndex, endIndex, nil
 

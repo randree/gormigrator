@@ -1,6 +1,7 @@
 package gormigrator
 
 import (
+	"log"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -18,13 +19,13 @@ func Code(code string) {
 	filename := caller()
 	codeExists(code, filename)
 	if code == "" {
-		panic("code is missing (" + filename + ")")
+		log.Fatal("code is missing (" + filename + ")")
 	}
 	if code == "null" {
-		panic("code can't have reserved name null (" + filename + ")")
+		log.Fatal("code can't have reserved name null (" + filename + ")")
 	}
 	if strings.Contains(code, " ") {
-		panic("code contains a whitespace (" + filename + ")")
+		log.Fatal("code contains a whitespace (" + filename + ")")
 	}
 	migrationFileList[filename] = &updown{
 		level: filename,
@@ -37,7 +38,7 @@ func Up(upgrader func(*gorm.DB) error) {
 	filename := caller()
 	current := migrationFileList[filename]
 	if current == nil {
-		panic("a code is missing at " + filename)
+		log.Fatal("a code is missing at " + filename)
 	}
 	current.up = upgrader
 }
@@ -47,7 +48,7 @@ func Down(downgrader func(*gorm.DB) error) {
 	filename := caller()
 	current := migrationFileList[filename]
 	if current == nil {
-		panic("a code is missing at " + filename)
+		log.Fatal("a code is missing at " + filename)
 	}
 	current.down = downgrader
 }
@@ -55,10 +56,10 @@ func Down(downgrader func(*gorm.DB) error) {
 func consistencyFileCheck(list *migrationFileListMap) {
 	for name, entry := range *list {
 		if entry.up == nil {
-			panic("a upgrader is missing at " + name)
+			log.Fatal("a upgrader is missing at " + name)
 		}
 		if entry.down == nil {
-			panic("a downgrader is missing at " + name)
+			log.Fatal("a downgrader is missing at " + name)
 		}
 	}
 }
@@ -71,7 +72,7 @@ func caller() string {
 func codeExists(newCode string, filename string) {
 	for _, updownEntry := range migrationFileList {
 		if updownEntry.code == newCode {
-			panic("code already exists in " + filename)
+			log.Fatal("code already exists in " + filename)
 		}
 	}
 }

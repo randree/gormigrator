@@ -1,8 +1,8 @@
 # GORMigrator - A migration tool based on GORM
 
-The GORMigrator is a lightweight but powerful and flexible migration tool based on GORM. Especially useful in a container environment like Docker. 
+The GORMigrator is a lightweight but powerful and flexible migration tool based on GORM. Especially useful in container environments like Docker.
 
-The goal is to create build of your migration setup. You can put that build into a `FROM scratch AS bin` container with minimal size and deploy it to your server where you can execute the migration.
+The goal is to create a build of your migration setup. You can put this build in a `FROM scratch AS bin` container of minimal size and deploy it to your server where you can perform the migration.
 
 ## Example
 
@@ -11,7 +11,7 @@ Start with creating a migration directory.
 $ mkdir migration
 ```
 
-Inside that directory create a `main.go`. It is needed to define the database connection.
+Create a `main.go` in this directory. It is needed to define the database connection.
 
 ```golang
 package main
@@ -41,6 +41,7 @@ func main() {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		cfg.Host, cfg.User, cfg.Password, cfg.DBname, cfg.Port)
 
+	// Or choose other dialects like MySQL
 	db, err := gorm.Open(postgres.Open(dsn))
 	if err != nil {
 		fmt.Println(err.Error())
@@ -85,6 +86,7 @@ func init() {
 
 }
 ```
+All migration files must to be ordered.
 
 Lets create the next migration `mig0002.go`:
 ```golang
@@ -126,12 +128,14 @@ The migration to the first level upgrade is done by
 ```console
 $ go run ./... -from null -to first_migration -user myname
 ```
-`null` represents the zeroth level.
+`null` represents the zeroth level. `first_migration` is the code we defined in `mig0001.go`.
 
 For the second upgrade we use
 ```console
 $ go run ./... -from first_migration -to adding_new_column -user myname
 ```
+So we upgraded from the first stage `first_migration` to `adding_new_column` which is the code from the second migration file `mig0002.go`.
+
 We also could have used 
 ```console
 $ go run ./... -from null -to adding_new_column -user myname
@@ -151,7 +155,7 @@ You can downgrade only one step at a time.
 
 ## How it works
 
-For migrating UP or DOWN we are using a code instead of `up` or `down` or filenames. It helps the user to be aware of what the migration does. `mig0001` and `mig0002` give you no information about the process, contrary to `first_migration` and `adding_new_column`. In addition after compiling these codes are hidden from users who don't know the source code. This gives an extra layer of security.
+For migrating UP or DOWN we are using a code instead of `up` or `down` or filenames. It helps you to be aware of what the migration does. `mig0001` and `mig0002` do not give you any information about the process, contrary to `first_migration` and `adding_new_column`. Moreover, after compilation, these codes are "hidden" from others who do not know the source code. This provides an additional layer of security.
 
 Example of up and downgrades:
 
@@ -163,11 +167,11 @@ Example of up and downgrades:
 | ⬆ `-from null -to first_migration` | ⬇ `-from first_migration -to null` | |
 | null | null | 0 |
 
-Migration starts with `null` which represents an empty database. The files should be in correct order. You can choose, e.g. `mig0001.go`, `test01.go` or `foo0000001.go`.
+The first migration starts with `null`, which represents an empty database. The files should be in the correct order. For example, you can choose `mig0001.go`, `test01.go` or `foo0000001.go`.
 
 ### Flags
 
-You can use following flags:
+You can use the following flags:
 | Flags | Description |
 |-----|---|
 | `-list` | List all migrations |
@@ -178,7 +182,7 @@ You can use following flags:
 
 ### Username
 
-Use `-user <NAME>` to document the user who execute the migration.
+Use `-user <NAME>` to document the user performing the migration.
 
 ### List
 

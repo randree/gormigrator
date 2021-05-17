@@ -124,7 +124,7 @@ Now we are going to create a module.
 $ go mod init migration
 ```
 
-The migration to the first level upgrade is done by
+Migration to the first level upgrade is done by
 ```console
 $ go run ./... -from null -to first_migration -user myname
 ```
@@ -134,7 +134,7 @@ For the second upgrade we use
 ```console
 $ go run ./... -from first_migration -to adding_new_column -user myname
 ```
-So we upgraded from the first stage `first_migration` to `adding_new_column` which is the code from the second migration file `mig0002.go`.
+We have updated from the first stage `first_migration` to `adding_new_column`, which is the code from the second migration file `mig0002.go`.
 
 We also could have used 
 ```console

@@ -186,7 +186,8 @@ Use `-user <NAME>` to document the user performing the migration.
 
 ### List
 
-`-list` gives you something like that:
+`-list` will give you something like that:
+
 ```
 | DATETIME HISTORY                         | LEVEL (State)                            | USER                 |
 | ---------------------------------------- | ---------------------------------------- | -------------------- |
@@ -197,3 +198,8 @@ Use `-user <NAME>` to document the user performing the migration.
 | 2021-03-14 11:03:31.228521 +0200 CEST    | mig0001.go                               | Maddy                |
 | 2021-03-12 09:03:31.204998 +0200 CEST    | null                                     | Dan                  |
 ```
+
+## References
+
+- [GROM](https://gorm.io/) The GORM project.
+- [GROM migration methods.](https://gorm.io/docs/migration.html) You can use these methods in the GORMigrator.

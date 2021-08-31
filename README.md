@@ -4,9 +4,9 @@ The GORMigrator is a lightweight but powerful and flexible migration tool based 
 
 The goal is to create a build of your migration setup.
 
-## Steps
+## Steps for deployment
 
-* Create go build
+* Create a go build
 * Putting build in a `FROM scratch AS bin` container for minimal size
 * Deploy
 * Start service or container with environment variables (`FROM=null TO=create_user_table USER=testuser ...` to perform migration on database
@@ -25,7 +25,7 @@ The folder looks like
     ...
 ```
 
-mig-files can have any name, as long as they are ordered (e.g. `mig000xx.go`).
+`mig`-files can have any names, as long as they are ordered (e.g. `mig000xx.go`).
 Example for `main.go`:
 ```golang
 package main
@@ -33,7 +33,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/randree/gormigrator/v1"
+	g "github.com/randree/gormigrator/v1"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -44,7 +44,7 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	gormigrator.InitMigration(db)
+	g.InitMigration(db)
 }
 ```
 
@@ -59,13 +59,13 @@ import (
 
 func init() {
 
-    // Mig function to load state 
+	// Mig function to load state 
 	g.Mig(g.State{
 
-        // Tag: Name for state after migration
+		// Tag: Name for state after migration
 		Tag: "roles",
 
-        // Up-function to migrate up
+		// Up-function to migrate up
 		Up: func(db *gorm.DB) error {
 
 			type Role struct {
@@ -81,7 +81,7 @@ func init() {
 			return err
 		},
 
-        // Down-function to migrate down
+		// Down-function to migrate down
 		Down: func(db *gorm.DB) error {
 			err := db.Migrator().DropTable("roles")
 			return err
@@ -135,23 +135,28 @@ $ VERSION=1 HISTORY=1 FROM=users TO=testers USER=foo go run ./...
 ```
 (`HISTORY` gives you the the list of migrations before any action)
 
+### Calls
+
+```console
+$ FROM=<Tag> TO=<Tag> [HISTORY=1] [VERSION=1] (Docker Container | go build | go run ./...)
+```
+Docker-compose file
+```yaml
+...
+  migrator:
+    image: from_scratch_image
+    environment:
+      FROM: <Tag>
+      TO: <Tag>
+...
+
+```
+
 ## Downgrade note
 
-To prevent a accidental and fatal downgrade to `null` or to many steps only one downgrade step at a time is allowed.
+To prevent a accidental and fatal downgrade to `null` or too many steps in a row only one downgrade step at a time is allowed.
 
 ## References
 
 - [GROM](https://gorm.io/) The GORM project.
 - [GROM migration methods.](https://gorm.io/docs/migration.html) You can use these methods in the GORMigrator.
-
-
-
-
-
-
-
-
-
-
-
-

@@ -73,7 +73,7 @@ func init() {
 				Role string
 			}
 			db.AutoMigrate(&Role{})
-            err := db.Create(&Role{
+			err := db.Create(&Role{
 				ID:   2,
 				Role: "Guest",
 			}).Error

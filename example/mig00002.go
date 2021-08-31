@@ -1,7 +1,7 @@
 package main
 
 import (
-	gm "github.com/randree/gormigrator/v1"
+	gm "github.com/randree/gormigrator"
 	"gorm.io/gorm"
 )
 

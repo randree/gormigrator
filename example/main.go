@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/randree/gormigrator/v1"
+	"github.com/randree/gormigrator"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

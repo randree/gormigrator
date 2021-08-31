@@ -33,7 +33,7 @@ package main
 import (
 	"fmt"
 
-	g "github.com/randree/gormigrator/v1"
+	g "github.com/randree/gormigrator"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -53,7 +53,7 @@ func main() {
 package main
 
 import (
-	g "github.com/randree/gormigrator/v1"
+	g "github.com/randree/gormigrator"
 	"gorm.io/gorm"
 )
 

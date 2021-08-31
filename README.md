@@ -1,48 +1,45 @@
-# GORMigrator - A migration tool based on GORM
+# GORMigrator v1 - A migration tool based on GORM
 
 The GORMigrator is a lightweight but powerful and flexible migration tool based on GORM. Especially useful in container environments like Docker.
 
-The goal is to create a build of your migration setup. You can put this build in a `FROM scratch AS bin` container of minimal size and deploy it to your server where you can perform the migration.
+The goal is to create a build of your migration setup.
+
+## Steps
+
+* Create go build
+* Putting build in a `FROM scratch AS bin` container for minimal size
+* Deploy
+* Start service or container with environment variables (`FROM=null TO=create_user_table USER=testuser ...` to perform migration on database
 
 ## Example
 
-Start with creating a migration directory. 
+See example under `example/` to see how it works.
+
+The folder looks like 
 ```bash
-$ mkdir migration
+├── migration
+│   ├── main.go
+│   ├── mig00001.go
+│   ├── mig00002.go
+│   └── mig00003.go
+    ...
 ```
 
-Create a `main.go` in this directory. It is needed to define the database connection.
-
+mig-files can have any name, as long as they are ordered (e.g. `mig000xx.go`).
+Example for `main.go`:
 ```golang
 package main
 
 import (
 	"fmt"
+
+	"github.com/randree/gormigrator/v1"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"github.com/caarlos0/env/v6"
-	"github.com/randree/gormigrator"
 )
 
-type DBconfig struct {
-	Host     string `env:"DB_HOST" envDefault:"localhost"`
-	Port     string `env:"DB_PORT" envDefault:"5432"`
-	DBname   string `env:"DB_PORT" envDefault:"testdb"`
-	User     string `env:"DB_USER" envDefault:"user"`
-	Password string `env:"DB_PASSWORD" envDefault:"passpass"`
-}
-
 func main() {
-	cfg := DBconfig{}
-	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("%+v\n", err)
-	}
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		cfg.Host, cfg.User, cfg.Password, cfg.DBname, cfg.Port)
-
-	// Or choose other dialects like MySQL
-	db, err := gorm.Open(postgres.Open(dsn))
+	db, err := gorm.Open(postgres.Open("host=localhost user=user password=passpass dbname=testdb port=5432 sslmode=disable"))
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -51,155 +48,110 @@ func main() {
 }
 ```
 
-
-
-Next, we create the first migration file `mig0001.go`:
+Mig-files (e.g. `mig001.go`) looks like:
 ```golang
 package main
 
 import (
-	g "github.com/randree/gormigrator"
+	g "github.com/randree/gormigrator/v1"
 	"gorm.io/gorm"
 )
 
 func init() {
-	g.Code("first_migration")
-	g.Up(func(db *gorm.DB) error {
 
-		type migtest struct {
-			gorm.Model
-			Name  string `gorm:"size:255"`
-			Email string `gorm:"size:300"`
-		}
+    // Mig function to load state 
+	g.Mig(g.State{
 
-		err := db.AutoMigrate(&migtest{})
+        // Tag: Name for state after migration
+		Tag: "roles",
 
-		return err
+        // Up-function to migrate up
+		Up: func(db *gorm.DB) error {
+
+			type Role struct {
+				ID   int `gorm:"primarykey"`
+				Role string
+			}
+			db.AutoMigrate(&Role{})
+            err := db.Create(&Role{
+				ID:   2,
+				Role: "Guest",
+			}).Error
+
+			return err
+		},
+
+        // Down-function to migrate down
+		Down: func(db *gorm.DB) error {
+			err := db.Migrator().DropTable("roles")
+			return err
+		},
 	})
-
-	g.Down(func(db *gorm.DB) error {
-
-		err := db.Migrator().DropTable("migtests")
-
-		return err
-	})
-
-}
-```
-All migration files must to be ordered.
-
-Lets create the next migration `mig0002.go`:
-```golang
-package main
-
-import (
-	g "github.com/randree/gormigrator"
-	"gorm.io/gorm"
-)
-
-func init() {
-	type migtest struct {
-		// we need only new column in struct
-		Testcol string
-	}
-	g.Code("adding_new_column")
-	g.Up(func(db *gorm.DB) error {
-
-		err := db.Migrator().AddColumn(&migtest{}, "testcol")
-
-		return err
-	})
-
-	g.Down(func(db *gorm.DB) error {
-		err := db.Migrator().DropColumn(&migtest{}, "testcol")
-		return err
-	})
-
 }
 ```
 
-Now we are going to create a module.
+## Create and use module
 
+Steps to create a go module:
 ```console
 $ go mod init migration
 ```
-
-Migration to the first level upgrade is done by
+To load dependencies:
 ```console
-$ go run ./... -from null -to first_migration -user myname
+$ go mod tidy
 ```
-`null` represents the zeroth level. `first_migration` is the code we defined in `mig0001.go`.
 
-For the second upgrade we use
+To run a migration:
 ```console
-$ go run ./... -from first_migration -to adding_new_column -user myname
-```
-We have updated from the first stage `first_migration` to `adding_new_column`, which is the code from the second migration file `mig0002.go`.
+$ FROM=null TO=users USER=foo go run ./...
 
-We also could have used 
+⬆ UPGRADE (0) ⟶ (mig00001.go) tag: null ⟶ roles 
+⬆ UPGRADE (mig00001.go) ⟶ (mig00002.go) tag: roles ⟶ customers 
+⬆ UPGRADE (mig00002.go) ⟶ (mig00003.go) tag: customers ⟶ users
+```
+To initialize first tables you start migration from a tag with name `null`.
+
+To show a migration history:
 ```console
-$ go run ./... -from null -to adding_new_column -user myname
-```
-to upgrade from level 0 to 2.
+$ HISTORY=1 go run ./...
 
-Downgrading is similar:
+| DATETIME HISTORY                       | LEVEL (State)         | USER       |
+| -------------------------------------- | --------------------- | ---------- |
+| 2021-08-31 13:09:47.932619 +0200 CEST  | mig00003.go (current) | foo        |
+| 2021-08-31 13:09:47.908876 +0200 CEST  | mig00002.go           | foo        |
+| 2021-08-31 13:09:47.871357 +0200 CEST  | mig00001.go           | foo        |
+```
+
+To show version:
 ```console
-$ go run ./... -from adding_new_column -to first_migration -user myname
+$ VERSION=1 go run ./...
+
+Gormigrator version:  1.0.0
 ```
-and than back to `null` (level 0) with
+
+Or combine all:
 ```console
-$ go run ./... -from first_migration -to null -user myname
+$ VERSION=1 HISTORY=1 FROM=users TO=testers USER=foo go run ./...
 ```
-You can downgrade only one step at a time.
+(`HISTORY` gives you the the list of migrations before any action)
 
+## Downgrade note
 
-## How it works
-
-For migrating UP or DOWN we are using a code instead of `up` or `down` or filenames. It helps you to be aware of what the migration does. `mig0001` and `mig0002` do not give you any information about the process, contrary to `first_migration` and `adding_new_column`. Moreover, after compilation, these codes are "hidden" from others who do not know the source code. This provides an additional layer of security.
-
-Example of up and downgrades:
-
-| Upgrades | Downgrades | Level |
-|-------|-------|---|
-| adding_new_column | adding_new_column | 2 |
-| ⬆ `-from first_migration -to adding_new_column` | ⬇ `-from adding_new_column -to first_migration` | |
-| first_migration | first_migration | 1 |
-| ⬆ `-from null -to first_migration` | ⬇ `-from first_migration -to null` | |
-| null | null | 0 |
-
-The first migration starts with `null`, which represents an empty database. The files should be in the correct order. For example, you can choose `mig0001.go`, `test01.go` or `foo0000001.go`.
-
-### Flags
-
-You can use the following flags:
-| Flags | Description |
-|-----|---|
-| `-list` | List all migrations |
-| `-version` | Show version |
-| `-from <CODE>` | From-code |
-| `-to <CODE>` | To-code |
-| `-user <NAME>` | Admin or username |
-
-### Username
-
-Use `-user <NAME>` to document the user performing the migration.
-
-### List
-
-`-list` will give you something like that:
-
-```
-| DATETIME HISTORY                         | LEVEL (State)                            | USER                 |
-| ---------------------------------------- | ---------------------------------------- | -------------------- |
-| 2021-05-14 16:03:31.393752 +0200 CEST    | mig0003.go                     (current) | Dan                  |
-| 2021-05-11 16:03:31.351858 +0200 CEST    | mig0002.go                               | Maddy                |
-| 2021-05-02 16:03:31.310811 +0200 CEST    | mig0001.go                               | The Downgrader       |
-| 2021-04-24 09:03:31.265472 +0200 CEST    | mig0002.go                               | Team Migration       |
-| 2021-03-14 11:03:31.228521 +0200 CEST    | mig0001.go                               | Maddy                |
-| 2021-03-12 09:03:31.204998 +0200 CEST    | null                                     | Dan                  |
-```
+To prevent a accidental and fatal downgrade to `null` or to many steps only one downgrade step at a time is allowed.
 
 ## References
 
 - [GROM](https://gorm.io/) The GORM project.
 - [GROM migration methods.](https://gorm.io/docs/migration.html) You can use these methods in the GORMigrator.
+
+
+
+
+
+
+
+
+
+
+
+

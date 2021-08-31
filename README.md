@@ -48,7 +48,7 @@ func main() {
 }
 ```
 
-Mig-files (e.g. `mig001.go`) looks like:
+`mig`-files (e.g. `mig001.go`) looks like:
 ```golang
 package main
 

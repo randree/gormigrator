@@ -2,11 +2,12 @@ package gormigrator
 
 import (
 	"fmt"
+	"os"
 
 	"gorm.io/gorm"
 )
 
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 var Testing bool = false
 
@@ -14,7 +15,7 @@ var Testing bool = false
 
 func InitMigration(db *gorm.DB) {
 
-	migrationStore := NewMigrationStore(db)
+	migrationStore := NewMigrationStore(db, "migrations")
 
 	// If version show
 	if getEnv("VERSION", "") == "1" {
@@ -58,4 +59,13 @@ func showExample() {
 	fmt.Println("Examples:")
 	fmt.Println("HISTORY=1 VERSION=1 FROM=foo TO=bar USER=tester go run ./...")
 	fmt.Println("HISTORY=1 VERSION=1 FROM=foo TO=bar USER=tester  main_build")
+}
+
+// Get env variable as string
+func getEnv(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+
+	return defaultVal
 }

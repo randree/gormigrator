@@ -13,18 +13,22 @@ type Migration struct {
 }
 
 type MigrationStore struct {
-	db *gorm.DB
+	tableName string
+	db        *gorm.DB
 }
 
-func NewMigrationStore(db *gorm.DB) *MigrationStore {
+func NewMigrationStore(db *gorm.DB, tableName string) *MigrationStore {
 
-	startMig := &Migration{}
+	if tableName == "" {
+		tableName = "migrations"
+	}
 
 	// Creating a migration table if not exists
-	db.AutoMigrate(startMig)
+	db.Table(tableName).AutoMigrate(&Migration{})
 
 	return &MigrationStore{
-		db: db,
+		tableName: tableName,
+		db:        db,
 	}
 
 }
@@ -32,7 +36,7 @@ func NewMigrationStore(db *gorm.DB) *MigrationStore {
 // GetCurrentLevel returns the current level. In our case it is the filename, e.g. "mig0032.go"
 func (m *MigrationStore) GetCurrentTag() (string, error) {
 	last := &Migration{}
-	if err := m.db.Last(&last).Error; err != nil {
+	if err := m.db.Table(m.tableName).Last(&last).Error; err != nil {
 		return "", err
 	}
 	return last.Tag, nil
@@ -40,7 +44,7 @@ func (m *MigrationStore) GetCurrentTag() (string, error) {
 
 func (m *MigrationStore) FetchAll() ([]*Migration, error) {
 	var migrationList []*Migration
-	if err := m.db.Table("migrations").Order("id DESC").Find(&migrationList).Error; err != nil {
+	if err := m.db.Table(m.tableName).Order("id DESC").Find(&migrationList).Error; err != nil {
 		return nil, err
 	}
 	return migrationList, nil
@@ -52,7 +56,7 @@ func (m *MigrationStore) SaveState(tag, level, user string) error {
 		Level: level,
 		User:  user,
 	}
-	if err := m.db.Create(&currentState).Error; err != nil {
+	if err := m.db.Table(m.tableName).Create(&currentState).Error; err != nil {
 		return err
 	}
 	return nil

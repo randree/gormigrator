@@ -94,6 +94,11 @@ func performMigration(fromTag, toTag, user string, db *gorm.DB, migrationStore *
 		currentTag = "null"
 	}
 
+	if currentTag == toTag && currentTag != "null" {
+		fmt.Println("\033[;32mnothing to migrate - DB up-to-date\033[0m")
+		return nil
+	}
+
 	if currentTag != fromTag {
 		return fmt.Errorf("current tag differs from FROM tag")
 	}

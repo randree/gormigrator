@@ -68,14 +68,18 @@ func Test_performMigration(t *testing.T) {
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
 			LogLevel: logger.Silent, // Log level
+			// Colorful: true,
+			// LogLevel: logger.Info,
 		},
 	)})
 	t.Run("DB ok", func(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	migrationTableName := "test-foo"
+
 	// Pre clean up
-	err = db.Migrator().DropTable("migrations")
+	err = db.Migrator().DropTable(migrationTableName)
 	t.Run("Migrator 1", func(t *testing.T) {
 		assert.NoError(t, err)
 	})
@@ -84,7 +88,7 @@ func Test_performMigration(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	migrationStore := NewMigrationStore(db)
+	migrationStore := NewMigrationStore(db, migrationTableName)
 
 	type args struct {
 		fromTag string
@@ -139,7 +143,7 @@ func Test_performMigration(t *testing.T) {
 		},
 		{
 			name:    "repeat UP mig002",
-			wantErr: true,
+			wantErr: false, // nothing to change, DB up to date
 			args: args{
 				fromTag: "null",
 				toTag:   "add_entries",
@@ -169,7 +173,7 @@ func Test_performMigration(t *testing.T) {
 		},
 		{
 			name:    "repeat UP mig003",
-			wantErr: true,
+			wantErr: false,
 			args: args{
 				fromTag: "add_entries",
 				toTag:   "add_column",
@@ -189,7 +193,7 @@ func Test_performMigration(t *testing.T) {
 		},
 		{
 			name:    "repeat DOWN mig002",
-			wantErr: true,
+			wantErr: false,
 			args: args{
 				fromTag: "add_column",
 				toTag:   "add_entries",
@@ -271,7 +275,7 @@ func Test_performMigration(t *testing.T) {
 	}
 
 	// After clean up
-	err = db.Migrator().DropTable("migrations")
+	err = db.Migrator().DropTable(migrationTableName)
 	t.Run("Migrator 1", func(t *testing.T) {
 		assert.NoError(t, err)
 	})

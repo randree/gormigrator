@@ -4,6 +4,8 @@ The GORMigrator is a lightweight but powerful and flexible migration tool based 
 
 The goal is to create a build of your migration setup.
 
+GORMigrator can also be used as a seeder.
+
 ## Steps for deployment
 
 * Create a go build
@@ -44,7 +46,7 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	g.InitMigration(db)
+	g.InitMigration(db, "migrations") //"migrations" is the name of the table
 }
 ```
 

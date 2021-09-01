@@ -13,9 +13,9 @@ var Testing bool = false
 
 //Inspired by https://github.com/pressly/goose/blob/master/examples/go-migrations/00002_rename_root.go
 
-func InitMigration(db *gorm.DB) {
+func InitMigration(db *gorm.DB, tablename string) {
 
-	migrationStore := NewMigrationStore(db, "migrations")
+	migrationStore := NewMigrationStore(db, tablename)
 
 	// If version show
 	if getEnv("VERSION", "") == "1" {

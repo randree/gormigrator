@@ -14,5 +14,5 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	gormigrator.InitMigration(db)
+	gormigrator.InitMigration(db, "migrations")
 }
